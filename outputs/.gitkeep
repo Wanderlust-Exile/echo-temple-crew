@@ -1,0 +1,2 @@
+git add .gitignore outputs/.gitkeep
+git commit -m "Setup outputs/ directory with .gitignore and .gitkeep"

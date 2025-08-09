@@ -1,0 +1,5 @@
+# Ignore everything in outputs/
+outputs/*
+
+# But keep this placeholder file so the folder isn't deleted
+!outputs/.gitkeep
