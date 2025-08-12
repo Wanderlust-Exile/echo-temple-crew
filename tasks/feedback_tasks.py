@@ -1,55 +1,42 @@
-from crewai.tools import tool
+# tasks/feedback_tasks.py
+"""
+Task wrappers for the feedback pipeline.
+Each Task wraps a single tool (summary -> sentiment -> follow-up actions).
+A chained list `feedback_analysis_chain` is provided for easy inclusion in the Crew.
+"""
 
-# --- Tool Definitions ---
+from crewai import Task
+from tools.generate_feedback_summary_tool import generate_feedback_summary_tool
+from tools.generate_sentiment_analysis_tool import generate_sentiment_analysis_tool
+from tools.generate_follow_up_actions_tool import generate_follow_up_actions_tool
 
-def _collect_user_feedback() -> str:
-    """Collects raw feedback from users."""
-    return input("Please enter the user's feedback: ")
+# 1) Summarize raw feedback into a concise digest
+generate_feedback_summary_task = Task(
+    name="Generate Feedback Summary Task",
+    description="Summarize raw feedback into concise, prioritized points.",
+    tool=generate_feedback_summary_tool,
+    expected_output="A short, structured summary string describing the most important feedback themes."
+)
 
-collect_user_feedback = tool("collect_user_feedback")(_collect_user_feedback)
+# 2) Analyze sentiment of the summary
+generate_sentiment_analysis_task = Task(
+    name="Generate Sentiment Analysis Task",
+    description="Analyze the feedback summary for sentiment (Positive / Negative / Neutral).",
+    tool=generate_sentiment_analysis_tool,
+    expected_output="A sentiment label and short reasoning text."
+)
 
+# 3) Generate follow-up actions based on summary + sentiment
+generate_follow_up_actions_task = Task(
+    name="Generate Follow-Up Actions Task",
+    description="Produce concrete follow-up actions derived from the summary and sentiment.",
+    tool=generate_follow_up_actions_tool,
+    expected_output="A bullet list of prioritized follow-up actions."
+)
 
-def _analyze_sentiment(feedback: str) -> str:
-    """Analyzes sentiment of the feedback."""
-    if any(word in feedback.lower() for word in ["bad", "terrible", "poor", "dirty", "loud"]):
-        return "Negative"
-    elif any(word in feedback.lower() for word in ["great", "amazing", "beautiful", "clean", "wonderful"]):
-        return "Positive"
-    else:
-        return "Neutral"
-
-analyze_sentiment = tool("analyze_sentiment")(_analyze_sentiment)
-
-
-def _summarize_feedback(feedback: str) -> str:
-    """Summarizes key points from the feedback."""
-    return f"Summary: {feedback[:100]}..."  # Simple truncation for now
-
-summarize_feedback = tool("summarize_feedback")(_summarize_feedback)
-
-
-def _recommend_actions(summary: str, sentiment: str) -> str:
-    """Recommends actions based on summary and sentiment."""
-    if sentiment == "Negative":
-        return "Recommended Action: Address cleanliness and noise concerns."
-    elif sentiment == "Positive":
-        return "Recommended Action: Continue current operations and share testimonials."
-    else:
-        return "Recommended Action: Gather more data or follow up with customer."
-
-recommend_actions = tool("recommend_actions")(_recommend_actions)
-
-# --- Manual Test Runner ---
-
-if __name__ == "__main__":
-    feedback = collect_user_feedback.run()
-    print(f"\nCollected Feedback:\n{feedback}")
-
-    sentiment = analyze_sentiment.run(feedback)
-    print(f"\nSentiment Analysis:\n{sentiment}")
-
-    summary = summarize_feedback.run(feedback)
-    print(f"\nFeedback Summary:\n{summary}")
-
-    actions = recommend_actions.run(summary, sentiment)
-    print(f"\nRecommended Actions:\n{actions}")
+# Chain for convenience: run these in order in your crew/workflow
+feedback_analysis_chain = [
+    generate_feedback_summary_task,
+    generate_sentiment_analysis_task,
+    generate_follow_up_actions_task,
+]

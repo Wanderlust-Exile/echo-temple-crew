@@ -1,5 +1,5 @@
 from crewai import Task
-from tools.semantic_index_builder import build_index_tool
+from utils.semantic_index_builder import build_index_tool
 
 task = Task(
     description="Builds or updates the semantic search index for stored leads, notes, and docs.",
